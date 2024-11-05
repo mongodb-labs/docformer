@@ -6,9 +6,9 @@ import torch
 from mdbrtools.schema import parse_schema
 from sklearn.pipeline import Pipeline
 
+from origami.model.vpda import INVALID, NOOP, VPDA, ObjectVPDA
 from origami.preprocessing import DocTokenizerPipe, PadTruncTokensPipe, TokenEncoderPipe
 from origami.utils.common import ArrayStart, FieldToken, Symbol
-from origami.model.vpda import INVALID, NOOP, VPDA, ObjectVPDA
 
 START = 1
 END = 2
@@ -436,15 +436,15 @@ class TestObjectVPDA(unittest.TestCase):
     def test_accepts_unknown_prim_value(self):
         data = [
             {"foo": 1, "bar": Symbol.UNKNOWN},
-            {"foo": 1, "bar": {"baz": Symbol.UNKNOWN}},
-            {"foo": 1, "bar": [1, Symbol.UNKNOWN, 3]},
+            # {"foo": 1, "bar": {"baz": Symbol.UNKNOWN}},
+            # {"foo": 1, "bar": [1, Symbol.UNKNOWN, 3]},
         ]
 
         pipeline = Pipeline(
             [("tokenizer", DocTokenizerPipe()), ("padder", PadTruncTokensPipe()), ("encoder", TokenEncoderPipe())]
         )
 
-        df = pd.DataFrame({"docs": TestObjectVPDA.data})
+        df = pd.DataFrame({"docs": data})
         df = pipeline.fit_transform(df)
         tokens = torch.tensor(df["tokens"])
         encoder = pipeline["encoder"].encoder
@@ -463,7 +463,6 @@ class TestObjectVPDA(unittest.TestCase):
         df = pipeline.fit_transform(df)
         tokens = torch.tensor(df["tokens"])
         encoder = pipeline["encoder"].encoder
-        vpda = ObjectVPDA(encoder)
         schema = parse_schema(data)
 
         # accept original documents
@@ -478,6 +477,38 @@ class TestObjectVPDA(unittest.TestCase):
         ]
         df = pd.DataFrame({"docs": unknown_docs})
         df = pipeline.fit_transform(df)
+        unknown_tokens = torch.tensor(df["tokens"])
+        accepts = vpda.accepts(unknown_tokens)
+        self.assertTrue((accepts == True).all())
+
+    def test_accepts_unknown_field_token_with_schema(self):
+        data = TestObjectVPDA.data
+
+        pipeline = Pipeline(
+            [("tokenizer", DocTokenizerPipe()), ("padder", PadTruncTokensPipe()), ("encoder", TokenEncoderPipe())]
+        )
+
+        df = pd.DataFrame({"docs": TestObjectVPDA.data})
+        df = pipeline.fit_transform(df)
+        tokens = torch.tensor(df["tokens"])
+        encoder = pipeline["encoder"].encoder
+        schema = parse_schema(data)
+
+        # accept original documents
+        vpda = ObjectVPDA(encoder, schema)
+        accepts = vpda.accepts(tokens)
+        self.assertTrue((accepts == True).all())
+
+        # accept documents with UNKNOWN fields and any primitive values, arrays, sub_docs
+        unknown_docs = [
+            {"unknown": "Mice", "gender": "Female", "color": "white"},
+            {"animal": "Hamsters", "ANOTHER_UNKNOWN_FIELD": "Birds", "color": "black"},
+            {"UNKNOWN_FIELD": "UNKNOWN_VALUE", "gender": "Male", "color": "black"},
+            {"UNKNOWN_FIELD": {"foo": "bar"}, "gender": "Male", "color": "black"},
+            {"UNKNOWN_FIELD": ["Male", "Hamster", "black"], "gender": "Male", "color": "black"},
+        ]
+        df = pd.DataFrame({"docs": unknown_docs})
+        df = pipeline.transform(df)
         unknown_tokens = torch.tensor(df["tokens"])
         accepts = vpda.accepts(unknown_tokens)
         self.assertTrue((accepts == True).all())

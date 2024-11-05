@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
 from origami.model import ORIGAMI
-
 from origami.model.vpda import ObjectVPDA
 from origami.preprocessing import DFDataset, StreamEncoder, detokenize, target_collate_fn
 from origami.utils import FieldToken, Symbol

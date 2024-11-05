@@ -167,14 +167,14 @@ class VPDA:
         input_id = self.inputs_to_idx[input]
 
         if pop_symbol is None:
-            symbol_id = np.arange(len(self.symbol_alph), dtype="long")
+            top_of_stack_id = np.arange(len(self.symbol_alph), dtype="long")
         else:
-            symbol_id = self.symbols_to_idx[pop_symbol]
+            top_of_stack_id = self.symbols_to_idx[pop_symbol]
 
         # insert transitions
-        self.pop_t[source_id, symbol_id, input_id] = NOOP if pop_symbol is None else pop_symbol
-        self.push_t[source_id, symbol_id, input_id] = NOOP if push_symbol is None else push_symbol
-        self.state_t[source_id, symbol_id, input_id] = target_state
+        self.pop_t[source_id, top_of_stack_id, input_id] = NOOP if pop_symbol is None else pop_symbol
+        self.push_t[source_id, top_of_stack_id, input_id] = NOOP if push_symbol is None else push_symbol
+        self.state_t[source_id, top_of_stack_id, input_id] = target_state
 
     def initialize(self, n_stacks: int) -> None:
         """
@@ -244,15 +244,22 @@ class VPDA:
         masks = []
         self.initialize(inputs.shape[0])
 
-        for step in range(inputs.shape[1]):
-            # get current input
-            curr_input = inputs[:, step]
+        try:
+            for step in range(inputs.shape[1]):
+                # get current input
+                curr_input = inputs[:, step]
 
-            # get allowed inputs for each row
-            masks.append(self.get_input_mask())
+                # get allowed inputs for each row
+                masks.append(self.get_input_mask())
 
-            # update PDA with inputs
-            self.next(curr_input)
+                # update PDA with inputs
+                self.next(curr_input)
+        except AssertionError:
+            print("inputs", inputs)
+            print("decoded", self.encoder.decode(inputs))
+            print("current input", curr_input)
+            print("current input decoded", self.encoder.decode(curr_input))
+            raise
 
         mask = np.stack(masks, axis=1)
         return mask
@@ -422,12 +429,14 @@ class ObjectVPDA(VPDA):
         self.schema = schema
 
         self.field_token_ids = [i for ft, i in encoder.tokens_to_ids.items() if isinstance(ft, FieldToken)]
+        # include UNKNOWN as possible field token
+        self.field_token_ids.append(encoder.encode(Symbol.UNKNOWN.value))
 
         prim_value_token_ids = [
             i for pvt, i in encoder.tokens_to_ids.items() if not isinstance(pvt, (ArrayStart, FieldToken, Symbol))
         ]
         # UNKNOWN is treated as primitive value
-        prim_value_token_ids.append(encoder.encode(Symbol.UNKNOWN))
+        prim_value_token_ids.append(encoder.encode(Symbol.UNKNOWN.value))
 
         array_token_ids = set(i for at, i in encoder.tokens_to_ids.items() if isinstance(at, ArrayStart))
 
@@ -496,8 +505,6 @@ class ObjectVPDA(VPDA):
             push_symbol=None,
         )
 
-        # define transition rules for FIELD state
-
         # STATE -> END: read END, pop DOC, push END
         self.insert_transition(
             Symbol.FIELD.value,
@@ -518,7 +525,7 @@ class ObjectVPDA(VPDA):
             )
 
             # define transition rules for VALUE state for each FieldToken
-            if schema:
+            if schema and ftid != Symbol.UNKNOWN.value:
                 # if a schema is provided, only allow values seen for that field or UNKNOWN
                 ft = encoder.decode(ftid)
                 allowed_values = list(schema.get_prim_values(ft.name)) + [Symbol.UNKNOWN]

@@ -3,13 +3,16 @@ import pickle
 import random
 from collections import OrderedDict
 from enum import Enum
-from typing import Any, Generator, Iterable, Optional, Tuple, Union, Callable
+from typing import Any, Callable, Generator, Iterable, Optional, Tuple, Union
+
 import numpy as np
 import torch
 from omegaconf import OmegaConf
 
 from origami.utils.config import TopLevelConfig
+
 from .guild import print_guild_scalars
+
 
 class Symbol(Enum):
     PAD = 0
@@ -77,7 +80,6 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-
 
 
 def torch_isin(input: torch.Tensor, allowed: list) -> torch.Tensor:
@@ -223,15 +225,14 @@ def load_origami_model(path: str):
 
 
 def make_progress_callback(
-    train_config: "TrainConfig", # type: ignore
-    train_dataset: Optional["DFDataset"] = None, # type: ignore
-    test_dataset: Optional["DFDataset"] = None, # type: ignore
-    predictor: Optional["Predictor"] = None, # type: ignore
+    train_config: "TrainConfig",  # noqa: F821 # type: ignore
+    train_dataset: Optional["DFDataset"] = None,  # noqa: F821 # type: ignore
+    test_dataset: Optional["DFDataset"] = None,  # noqa: F821 # type: ignore
+    predictor: Optional["Predictor"] = None,  # noqa: F821 # type: ignore
 ) -> Callable:
     predict_accuracy = hasattr(predictor, "accuracy")
 
     def progress_callback(model):
-        
         if model.batch_num % train_config.print_every == 0:
             scalars = dict(
                 step=f"{int(model.batch_num / train_config.print_every)}",

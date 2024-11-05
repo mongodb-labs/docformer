@@ -9,6 +9,7 @@ from origami.model import ORIGAMI
 from origami.model.vpda import ObjectVPDA
 from origami.preprocessing import DFDataset, TargetFieldPipe
 from origami.utils import Symbol, load_origami_model
+from origami.utils.config import GuardrailsMethod
 
 from .utils import create_projection, load_data
 
@@ -45,8 +46,14 @@ def predict(source, **kwargs):
     encoder = pipelines["train"]["encoder"].encoder
     schema = pipelines["train"]["schema"].schema
 
-    # create model
-    vpda = ObjectVPDA(encoder, schema)
+    # create model and load weights
+    if config.model.guardrails == GuardrailsMethod.STRUCTURE_AND_VALUES:
+        vpda = ObjectVPDA(encoder, schema)
+    elif config.model.guardrails == GuardrailsMethod.STRUCTURE_ONLY:
+        vpda = ObjectVPDA(encoder)
+    else:
+        vpda = None
+
     model = ORIGAMI(config.model, config.train, vpda=vpda)
     model.load_state_dict(state_dict)
 
@@ -74,7 +81,7 @@ def predict(source, **kwargs):
     test_dataset = DFDataset(test_df)
 
     # predict target field
-    predictor = Predictor(model, encoder, config.data.target_field)
+    predictor = Predictor(model, encoder, config.data.target_field, max_batch_size=config.training.batch_size)
 
     predictions = predictor.predict(test_dataset)
 

@@ -13,7 +13,7 @@ from origami.preprocessing import (
     build_prediction_pipelines,
 )
 from origami.utils import TopLevelConfig, count_parameters, make_progress_callback, save_origami_model, set_seed
-from origami.utils.config import SequenceOrderMethod
+from origami.utils.config import GuardrailsMethod, SequenceOrderMethod
 
 from .utils import create_projection, load_data
 
@@ -99,6 +99,19 @@ from .utils import create_projection, load_data
     help="shuffle key/value pairs in each object",
     show_default=True,
 )
+@optgroup.option(
+    "--guardrails",
+    "-G",
+    type=click.Choice(["NONE", "STRUCTURE_ONLY", "STRUCTURE_AND_VALUES"]),
+    default="STRUCTURE_ONLY",
+    help="guardrails settings",
+)
+@optgroup.option(
+    "--ignore-field-path",
+    is_flag=True,
+    default=False,
+    help="By default, the full field path (i.e. `foo.bar.baz`) is used for field tokens. This option will ignore the full path and only use the last field name (`bar`). Use this for deeply nested object.",
+)
 @optgroup.group("Evaluation Options")
 @optgroup.option(
     "--val-split-ratio",
@@ -108,7 +121,7 @@ from .utils import create_projection, load_data
     show_default=True,
     help="ratio for validation dataset, a value of 0.0 disables validation",
 )
-@optgroup.option("--target-field", "-t", type=str, help="target field name to predict")
+@optgroup.option("--target-field", "-t", type=str, help="target field to predict")
 def train(source: str, **kwargs):
     """
     Train an ORIGAMI model.
@@ -131,6 +144,8 @@ def train(source: str, **kwargs):
     config.model.n_head = kwargs["num_attn_heads"]
     config.model.n_embd = kwargs["hidden_dim"]
     config.model.position_encoding = kwargs["pos_encoding"]
+    config.model.guardrails = kwargs["guardrails"]
+    config.model.mask_field_token_losses = True
 
     # train configs
     config.train.n_batches = kwargs["num_batches"]
@@ -141,10 +156,24 @@ def train(source: str, **kwargs):
     config.train.eval_every = 100
     config.train.test_split = kwargs["val_split_ratio"]
 
+    # as guideline, use 5 x batch size for evaluation of train/test metrics
+    config.train.sample_train = 5 * kwargs["batch_size"]
+    config.train.sample_test = 5 * kwargs["batch_size"]
+
     # pipeline configs
     config.pipeline.max_vocab_size = kwargs["max_vocab_size"]
     config.pipeline.sequence_order = "SHUFFLED" if kwargs["shuffled"] else "ORDERED"
     config.pipeline.upscale = kwargs["upscaling"]
+    config.pipeline.path_in_field_tokens = not kwargs["ignore_field_path"]
+    if not config.pipeline.path_in_field_tokens:
+        if config.model.guardrails == GuardrailsMethod.STRUCTURE_AND_VALUES:
+            click.echo(
+                click.style(
+                    f"info: `Can't use guardrails={config.model.guardrails}` when `pipeline.path_in_field_tokens` is `False`. Setting to `STRUCTURE_ONLY`.",
+                    fg="green",
+                )
+            )
+            config.model.guardrails = "STRUCTURE_ONLY"
 
     if config.pipeline.sequence_order == SequenceOrderMethod.ORDERED and config.pipeline.upscale > 1:
         click.echo(
@@ -170,9 +199,14 @@ def train(source: str, **kwargs):
     train_proc_df = pipelines["train"].fit_transform(train_df)
     train_dataset = DFDataset(train_proc_df)
 
+    # limit the number of training examples if dataset is too small
+    config.train.sample_train = min(len(train_dataset), config.train.sample_train)
+
     if config.train.test_split > 0:
         test_proc_df = pipelines["test"].transform(test_df)
         test_dataset = DFDataset(test_proc_df)
+        # limit the number of test examples if dataset is too small
+        config.train.sample_test = min(len(test_dataset), config.train.sample_test)
     else:
         test_dataset = None
 
@@ -181,10 +215,6 @@ def train(source: str, **kwargs):
     encoder = pipelines["train"]["encoder"].encoder
     config.model.block_size = pipelines["train"]["padding"].length
     config.model.vocab_size = encoder.vocab_size
-
-    # allow schema transitions in the test data if evaluating during training
-    if test_dataset is not None:
-        pipelines["train"]["schema"].fit(test_df)
 
     # warn about unique and high-cardinality keys in schema
     total_count = schema.count
@@ -207,7 +237,18 @@ def train(source: str, **kwargs):
             )
 
     # create model with PDA
-    vpda = ObjectVPDA(encoder, schema)
+    if kwargs["verbose"]:
+        click.echo(">>> creating PDA rules\n")
+
+    if config.model.guardrails == GuardrailsMethod.STRUCTURE_AND_VALUES:
+        vpda = ObjectVPDA(encoder, schema)
+    elif config.model.guardrails == GuardrailsMethod.STRUCTURE_ONLY:
+        vpda = ObjectVPDA(encoder)
+    else:
+        vpda = None
+
+    if kwargs["verbose"]:
+        click.echo(">>> creating ORiGAMi model\n")
     model = ORIGAMI(config.model, config.train, vpda=vpda)
 
     if kwargs["verbose"]:

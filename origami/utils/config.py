@@ -22,6 +22,12 @@ class PositionEncodingMethod(Enum):
     KEY_VALUE = 4
 
 
+class GuardrailsMethod(Enum):
+    NONE = 1
+    STRUCTURE_ONLY = 2
+    STRUCTURE_AND_VALUES = 3
+
+
 class BaseConfig:
     """Wrap all configs deriving from BaseConfig in OmegaConf objects."""
 
@@ -60,7 +66,7 @@ class ModelConfig(BaseConfig):
     mask_field_token_losses: bool = False
 
     # whether or not to use guardrails (requires a ObjectVPDA to be passed into model)
-    guardrails: bool = True
+    guardrails: GuardrailsMethod = GuardrailsMethod.STRUCTURE_ONLY
 
     @staticmethod
     def from_preset(size: str, **kwargs) -> "ModelConfig":

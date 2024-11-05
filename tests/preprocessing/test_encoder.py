@@ -193,7 +193,7 @@ class TestEncoder(unittest.TestCase):
 
         self.assertEqual(result, [(0, 1), (2, 3), (0, 4), (2, 5)])
 
-    def test_freeze(self):
+    def test_freeze_without_predefined(self):
         encoder = StreamEncoder()
         result = encoder.encode_val("foo")
         self.assertEqual(result, 0)
@@ -207,6 +207,20 @@ class TestEncoder(unittest.TestCase):
 
         self.assertEqual(encoder.encode_val("foo"), 0)
         self.assertEqual(encoder.encode_val("bar"), 1)
+
+    def test_freeze_with_predefined(self):
+        encoder = StreamEncoder(predefined=Symbol)
+        result = encoder.encode_val("foo")
+        self.assertEqual(result, len(Symbol))
+
+        encoder.freeze()
+
+        self.assertEqual(encoder.encode_val("foo"), len(Symbol))
+        self.assertEqual(encoder.encode_val("bar"), encoder.encode(Symbol.UNKNOWN))
+
+        encoder.unfreeze()
+
+        self.assertEqual(encoder.encode_val("bar"), len(Symbol) + 1)
 
     def test_token_freq(self):
         values = ["foo"] * 7 + ["bar"] * 3 + ["baz"]
