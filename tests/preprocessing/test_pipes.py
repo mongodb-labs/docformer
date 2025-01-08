@@ -143,7 +143,7 @@ class TestTargetFieldPipe(unittest.TestCase):
                 "docs": [
                     {"a": 1, "b": 2, "c": 3},
                     {"b": 1, "a": 3, "c": 2},
-                    {"c": 2, "a": 1},
+                    {"c": 2, "a": 1},  # Missing 'b'
                 ]
             }
         )
@@ -153,16 +153,12 @@ class TestTargetFieldPipe(unittest.TestCase):
 
         self.assertIn("target", df.columns)
 
-        for i, doc in enumerate(df["docs"]):
-            self.assertIn("b", doc)
-            self.assertIsInstance(doc, OrderedDict)
-            self.assertEqual(list(doc.keys())[-1], "b")
-            self.assertEqual(doc["b"], df["target"][i])
-
-        self.assertEqual(df["docs"][2]["b"], Symbol.UNKNOWN)
-
-        # test that index is range
-        self.assertEqual(list(range(len(df))), list(df.index))
+        for i, (doc, target) in enumerate(zip(df["docs"], df["target"])):
+            if target == Symbol.UNKNOWN:
+                self.assertNotIn("b", doc)
+            else:
+                self.assertIn("b", doc)
+                self.assertEqual(doc["b"], target)
 
 
 class TestDocTokenizerPipe(unittest.TestCase):

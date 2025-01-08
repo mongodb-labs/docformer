@@ -11,7 +11,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import KBinsDiscretizer
 from sklearn.utils.validation import check_is_fitted
 
-from origami.utils.common import ArrayStart, Symbol, pad_trunc, walk_all_leaf_kvs
+from origami.utils.common import ArrayStart, Symbol, pad_trunc, reorder_with_target_last, walk_all_leaf_kvs
 
 from .encoder import StreamEncoder
 from .utils import CAT_THRESHOLD, deepcopy_df, tokenize
@@ -122,19 +122,12 @@ class TargetFieldPipe(BasePipe):
     def __init__(self, target_field: str):
         self.target_field = target_field
 
-    def _move_target(self, doc: dict | OrderedDict) -> OrderedDict:
-        target = doc.pop(self.target_field, Symbol.UNKNOWN)
-        if isinstance(doc, dict):
-            doc = OrderedDict(doc)
-        doc[self.target_field] = target
-        return doc, target
-
     def transform(self, X: pd.DataFrame, y=None) -> pd.DataFrame:
         if "docs" not in X.columns:
             raise ColumnMissingException("TargetFieldPipe requires column 'docs' in the DataFrame.")
 
         X = deepcopy_df(X)
-        docs, targets = zip(*X["docs"].map(self._move_target))
+        docs, targets = zip(*X["docs"].map(lambda doc: reorder_with_target_last(doc, self.target_field)))
         X["docs"] = docs
         X["target"] = targets
         return X
