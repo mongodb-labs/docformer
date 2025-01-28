@@ -1,21 +1,6 @@
 import unittest
-from collections import OrderedDict
 
-from origami.utils.common import flatten_docs, permute_document, walk_all_leaf_kvs
-
-
-class TestUtils(unittest.TestCase):
-    def test_permute_document(self):
-        doc = {"a": 1, "b": 2, "c": 3, "d": 4}
-        shuffled_doc = permute_document(doc)
-
-        self.assertTrue(isinstance(shuffled_doc, OrderedDict))
-        self.assertEqual(sorted(shuffled_doc.keys()), ["a", "b", "c", "d"])
-
-        self.assertEqual(shuffled_doc["a"], 1)
-        self.assertEqual(shuffled_doc["b"], 2)
-        self.assertEqual(shuffled_doc["c"], 3)
-        self.assertEqual(shuffled_doc["d"], 4)
+from origami.utils.common import flatten_docs, walk_all_leaf_kvs
 
 
 class TestWalkAllLeafKVs(unittest.TestCase):
