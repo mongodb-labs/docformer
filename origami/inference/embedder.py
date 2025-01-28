@@ -9,7 +9,9 @@ from origami.utils import FieldToken, Symbol
 
 
 class Embedder:
-    def __init__(self, model: ORIGAMI, encoder: StreamEncoder, target_field: Optional[str] = None, batch_size: int = 128):
+    def __init__(
+        self, model: ORIGAMI, encoder: StreamEncoder, target_field: Optional[str] = None, batch_size: int = 128
+    ):
         self.model = model
         self.encoder = encoder
         self.batch_size = batch_size

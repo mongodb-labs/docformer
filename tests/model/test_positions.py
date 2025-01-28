@@ -1,24 +1,23 @@
 import unittest
-import torch
+
 import pandas as pd
 import torch
 from sklearn.pipeline import Pipeline
 
+from origami.model.positions import (
+    BasePositionEncoding,
+    IntegerPositionEncoding,
+    KeyValuePositionEncoding,
+    SineCosinePositionEncoding,
+)
+from origami.model.vpda import ObjectVPDA
 from origami.preprocessing import (
     DocTokenizerPipe,
     PadTruncTokensPipe,
     SchemaParserPipe,
     TokenEncoderPipe,
 )
-from origami.model.positions import (
-    BasePositionEncoding,
-    KeyValuePositionEncoding,
-    SineCosinePositionEncoding,
-    IntegerPositionEncoding,
-)
 from origami.utils.common import ArrayStart, FieldToken, Symbol
-from origami.model.vpda import ObjectVPDA
-
 
 
 class TestBasePositionEncoding(unittest.TestCase):
@@ -84,48 +83,42 @@ class TestSineCosinePositionEncoding(unittest.TestCase):
         self.seq_len = 16
         self.embedding_dim = 32
         self.block_size = 64
-        
+
         self.encoder = SineCosinePositionEncoding(
-            block_size=self.block_size,
-            embedding_dim=self.embedding_dim,
-            fuse_with_mlp=False
+            block_size=self.block_size, embedding_dim=self.embedding_dim, fuse_with_mlp=False
         )
-        
+
         self.encoder_with_mlp = SineCosinePositionEncoding(
-            block_size=self.block_size,
-            embedding_dim=self.embedding_dim,
-            fuse_with_mlp=True
+            block_size=self.block_size, embedding_dim=self.embedding_dim, fuse_with_mlp=True
         )
 
     def test_output_shape(self):
         """Test if the output shape matches the input shape"""
         tok_emb = torch.randn(self.batch_size, self.seq_len, self.embedding_dim)
         output = self.encoder(tok_emb)
-        
+
         self.assertEqual(
-            output.shape, 
-            (self.batch_size, self.seq_len, self.embedding_dim),
-            "Output shape should match input shape"
+            output.shape, (self.batch_size, self.seq_len, self.embedding_dim), "Output shape should match input shape"
         )
 
     def test_positional_encoding_pattern(self):
         """Test if the positional encoding follows the expected sine/cosine pattern"""
         # Get the raw positional encoding matrix
         pe = self.encoder.pe[0]  # Remove batch dimension
-        
+
         # Test first position (pos = 0)
         self.assertAlmostEqual(
             pe[0, 0].item(),  # sin(0) = 0
             0.0,
             places=6,
-            msg="First position, first dimension should be sin(0) = 0"
+            msg="First position, first dimension should be sin(0) = 0",
         )
-        
+
         self.assertAlmostEqual(
             pe[0, 1].item(),  # cos(0) = 1
             1.0,
             places=6,
-            msg="First position, second dimension should be cos(0) = 1"
+            msg="First position, second dimension should be cos(0) = 1",
         )
 
     def test_different_sequence_lengths(self):
@@ -134,7 +127,7 @@ class TestSineCosinePositionEncoding(unittest.TestCase):
         short_tok_emb = torch.randn(self.batch_size, 5, self.embedding_dim)
         short_output = self.encoder(short_tok_emb)
         self.assertEqual(short_output.shape, (self.batch_size, 5, self.embedding_dim))
-        
+
         # Test with longer sequence
         long_tok_emb = torch.randn(self.batch_size, self.seq_len, self.embedding_dim)
         long_output = self.encoder(long_tok_emb)
@@ -144,77 +137,64 @@ class TestSineCosinePositionEncoding(unittest.TestCase):
         """Test if MLP fusion works correctly"""
         tok_emb = torch.randn(self.batch_size, self.seq_len, self.embedding_dim)
         output = self.encoder_with_mlp(tok_emb)
-        
+
         # Check output shape (should match input shape due to final MLP layer)
         self.assertEqual(
-            output.shape, 
+            output.shape,
             (self.batch_size, self.seq_len, self.embedding_dim),
-            "MLP fusion output shape should match input shape"
+            "MLP fusion output shape should match input shape",
         )
-        
+
         # Check that output is different from simple addition
         simple_output = self.encoder(tok_emb)
         self.assertFalse(
-            torch.allclose(output, simple_output),
-            "MLP fusion should produce different results from simple addition"
+            torch.allclose(output, simple_output), "MLP fusion should produce different results from simple addition"
         )
 
     def test_periodicity(self):
         """Test if the encoding has the expected periodicity properties"""
         pe = self.encoder.pe[0]  # Remove batch dimension
-        
+
         # For dimension d, the wavelength should be 10000^(2d/embedding_dim)
         d = 0  # First dimension
         wavelength = 10000 ** (2 * d / self.embedding_dim)
-        
+
         # Check if values repeat with the expected period
         pos1 = 0
         pos2 = int(wavelength / 2)  # Half wavelength for sine should give opposite values
-        
+
         self.assertAlmostEqual(
-            pe[pos1, d].item(),
-            -pe[pos2, d].item(),
-            places=4,
-            msg="Sine values should be opposite at half wavelength"
+            pe[pos1, d].item(), -pe[pos2, d].item(), places=4, msg="Sine values should be opposite at half wavelength"
         )
 
     def test_output_range(self):
         """Test if the output values are in a reasonable range"""
         tok_emb = torch.randn(self.batch_size, self.seq_len, self.embedding_dim)
         output = self.encoder(tok_emb)
-        
+
         # Check if output values are not exploding
-        self.assertTrue(
-            torch.all(torch.isfinite(output)),
-            "Output should not contain inf or nan values"
-        )
-        
+        self.assertTrue(torch.all(torch.isfinite(output)), "Output should not contain inf or nan values")
+
         # Check if positional encoding values are bounded
         pe = self.encoder.pe
         self.assertTrue(
-            torch.all(pe >= -1) and torch.all(pe <= 1),
-            "Positional encoding values should be bounded between -1 and 1"
+            torch.all(pe >= -1) and torch.all(pe <= 1), "Positional encoding values should be bounded between -1 and 1"
         )
 
     def test_device_compatibility(self):
         """Test if the encoder works on different devices"""
         if torch.cuda.is_available():
             encoder_cuda = SineCosinePositionEncoding(
-                block_size=self.block_size,
-                embedding_dim=self.embedding_dim
+                block_size=self.block_size, embedding_dim=self.embedding_dim
             ).cuda()
-            
-            tok_emb = torch.randn(
-                self.batch_size, 
-                self.seq_len, 
-                self.embedding_dim,
-                device='cuda'
-            )
-            
-            output = encoder_cuda(tok_emb)
-            self.assertEqual(output.device.type, 'cuda')
 
-if __name__ == '__main__':
+            tok_emb = torch.randn(self.batch_size, self.seq_len, self.embedding_dim, device="cuda")
+
+            output = encoder_cuda(tok_emb)
+            self.assertEqual(output.device.type, "cuda")
+
+
+if __name__ == "__main__":
     unittest.main()
 
 

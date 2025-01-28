@@ -1,7 +1,7 @@
 import pickle
 import random
 from collections import OrderedDict, defaultdict
-from copy import copy, deepcopy
+from copy import copy
 from typing import Optional
 
 import numpy as np
@@ -322,9 +322,9 @@ class KBinsDiscretizerPipe(BasePipe):
         """Creates a discretizer for each numerical field in the DataFrame."""
 
         self._is_fitted = True
-        assert (
-            self.threshold >= self.bins
-        ), f"`{self.threshold}` threshold is lower than {self.bins} bins. Use fewer bins to reduce cardinality."
+        assert self.threshold >= self.bins, (
+            f"`{self.threshold}` threshold is lower than {self.bins} bins. Use fewer bins to reduce cardinality."
+        )
 
         docs = X["docs"]
         numerical_fields = defaultdict(list)

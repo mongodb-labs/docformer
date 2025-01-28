@@ -238,7 +238,7 @@ def make_progress_callback(
                 step=f"{int(model.batch_num / train_config.print_every)}",
                 epoch=model.epoch_num,
                 batch_num=model.batch_num,
-                batch_dt=f"{model.batch_dt*1000:.2f}",
+                batch_dt=f"{model.batch_dt * 1000:.2f}",
                 batch_loss=f"{model.loss:.4f}",
                 lr=f"{model.learning_rate:.2e}",
             )

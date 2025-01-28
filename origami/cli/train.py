@@ -244,7 +244,7 @@ def train(source: str, **kwargs):
         elif ratio > 0.5:
             click.echo(
                 click.style(
-                    f"warning: field `{path}` is high cardinality with {int(ratio*100)}% unique values. Consider excluding it with --exclude-fields",
+                    f"warning: field `{path}` is high cardinality with {int(ratio * 100)}% unique values. Consider excluding it with --exclude-fields",
                     fg="yellow",
                 )
             )
@@ -269,7 +269,7 @@ def train(source: str, **kwargs):
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = count_parameters(model)
         click.echo(f"running on device: {model.device}")
-        click.echo(f"number of parameters: {n_params/1e6:.2f}M")
+        click.echo(f"number of parameters: {n_params / 1e6:.2f}M")
         click.echo(f"config:\n {OmegaConf.to_yaml(config)}")
 
     # model callback during training, prints training and test metrics

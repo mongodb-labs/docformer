@@ -90,7 +90,7 @@ def predict(source, **kwargs):
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = count_parameters(model)
         click.echo(f"running on device: {model.device}")
-        click.echo(f"number of parameters: {n_params/1e6:.2f}M")
+        click.echo(f"number of parameters: {n_params / 1e6:.2f}M")
         click.echo(f"config:\n {OmegaConf.to_yaml(config)}")
 
     # predict target field

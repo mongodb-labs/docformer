@@ -1,15 +1,13 @@
 import json
 import pathlib
-from typing import Callable, Optional
+from typing import Optional
 
 import click
 import pandas as pd
 from omegaconf import OmegaConf
 
-from origami.inference import Predictor
-from origami.preprocessing import DFDataset, docs_to_df, load_df_from_mongodb
-from origami.utils import DataConfig, TrainConfig
-from origami.utils.guild import print_guild_scalars
+from origami.preprocessing import docs_to_df, load_df_from_mongodb
+from origami.utils import DataConfig
 
 
 def create_projection(include_fields: Optional[str] = None, exclude_fields: Optional[str] = None) -> dict:

@@ -252,9 +252,9 @@ class ORIGAMI(nn.Module):
         access to the embeddings produced by the final hidden layer."""
 
         b, t = idx.size()
-        assert (
-            t <= self.model_config.block_size
-        ), f"Cannot forward sequence of length {t}, block size is only {self.model_config.block_size}"
+        assert t <= self.model_config.block_size, (
+            f"Cannot forward sequence of length {t}, block size is only {self.model_config.block_size}"
+        )
 
         # token embeddings (b, t, n_embd)
         tok_emb = self.token_embed(idx)

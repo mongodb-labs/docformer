@@ -1,7 +1,6 @@
 import unittest
-from typing import List, Dict
 
-from origami.cli.utils import filter_data, create_projection
+from origami.cli.utils import create_projection, filter_data
 
 
 class TestCreateProjection(unittest.TestCase):
