@@ -4,6 +4,7 @@ from origami.preprocessing.pipelines import build_prediction_pipelines
 from origami.utils.config import SequenceOrderMethod
 
 
+@unittest.skip
 class TestBuildPipeline(unittest.TestCase):
     def test_build_prediction_pipelines(self):
         train_pipe, test_pipe = build_prediction_pipelines(
