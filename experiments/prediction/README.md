@@ -52,45 +52,44 @@ under the field path `task.cross_validation`.
 guild run <model>:all dataset=tictactoe cross_val=catalog
 ``` -->
 
-
 # Reproducing the results from our paper
 
-We use the open source library [guild.ai](https://guild.ai) for experiment management and result tracking. 
-
+We use the open source library [guild.ai](https://guild.ai) for experiment management and result tracking.
 
 ### Datasets
 
 We bundled all datasets used in the paper in a convenient [MongoDB dump file](). To reproduce the results, first
-you need MongoDB installed on your system (or a remote server). Then, download the dump file and restore it
-into your database. 
+you need MongoDB installed on your system (or a remote server). Then, download the dump file, unzip it, and restore it into your MongoDB instance:
 
 ```
 mongorestore dump/
 ```
 
-This assumes your `mongod` server is running on `localhost`, default port 27017 and without authentication.
-If your setup varies, consult the [documentation](https://www.mongodb.com/docs/database-tools/mongorestore/) 
-for `mongorestore` on how to restore the data. 
+This assumes your `mongod` server is running on `localhost` on default port 27017 and without authentication. If your setup varies, consult the [documentation](https://www.mongodb.com/docs/database-tools/mongorestore/) for `mongorestore` on how to restore the data.
 
+If your database setup (URI, port, authentication) differs, also make sure to update the [`.env.local`](.env.local) file in this directory accordingly.
 
 ### Hyper-parameter tuning
 
 To conduct a hyper-parameter search for a model, use the following command:
+
 ```
 NUMPY_EXPERIMENTAL_DTYPE_API=1 guild run <model>:hyperopt dataset=<dataset> --optimizer random --max-trials <num>
 ```
 
 This will evaluate `<num>` random combinations for model `<model>` on a 5-fold cross-validation for the dataset `<dataset>`:
 
-  - `<model>` is the model name, choose from `origami`, `logreg`, `rf`, `xgboost`, `lightgbm`.
-  - `<dataset>` is the dataset config name under `./datasets`. For example `json2vec-car` refers to the file `json2vec-car.yml` file. 
+- `<model>` is the model name, choose from `origami`, `logreg`, `rf`, `xgboost`, `lightgbm`.
+- `<dataset>` is the dataset config filename under [`./datasets`](./datasets/). For example `json2vec-car` refers to the file `json2vec-car.yml` file.
 
 Each parameter combination is executed as a separate guild run. To see the best parameters, you can use
+
 ```
 guild compare -Fo <model>:hyperopt -F"dataset=<dataset>" -u
 ```
 
 Alternatively you can provide a `--label <label>` as part of the run command and filter the comparison like so:
+
 ```
 guild compare -Fl <label> -u
 ```
@@ -98,12 +97,12 @@ guild compare -Fl <label> -u
 Search for the column `test_acc_mean` and sort in descending order (press `S`). Take note of the run ID (an 8-digit hash) of the best run (first column).
 
 To retrieve the flags of this particular run, use:
+
 ```
 guild runs info <run-id>
 ```
 
-
-### Running a configuration
+### Running a hyperparameter configuration
 
 To run a particular parameter configuration on a dataset, use the following command:
 
@@ -112,17 +111,17 @@ guild run <model>:all dataset=<dataset> <param1>=<value1> <param2=value>
 ```
 
 - `<model>` is the model name, choose from `origami`, `logreg`, `rf`, `xgboost`, `lightgbm`.
-- `<dataset>` is the dataset config name under `./datasets`. For example `json2vec-car` refers to the file `json2vec-car.yml` file. 
-- parameters are provided as `<param>=<value>`. For example, to change the number of layers in the model to 6, use `model.n_layer=6`. All available parameters can be found in the [`./flags.yaml`](./flags.yml) file. 
+- `<dataset>` is the dataset config name under `./datasets`. For example `json2vec-car` refers to the file `json2vec-car.yml` file.
+- parameters are provided as `<param>=<value>`. For example, to change the number of layers in the model to 6, use `model.n_layer=6`. All available parameters can be found in the [`./flags.yaml`](./flags.yml) file.
 
 ### Best ORiGAMi parameters for each dataset
 
-For convenience, we list the invocations with the best hyperparameters we provided in the paper. 
+For convenience, we list the invocations with the best hyperparameters we provided in the paper.
 
 #### automobile dataset
 
 ```
-guild run origami:all dataset=json2vec-automobile model.n_embd=48 model.n_head=4 model.n_layer=2 pipeline.sequence_order=ORDERED pipeline.upscale=1 train.batch_size=50 train.n_batches=20000 cross_val=5-fold
+guild run origami:all dataset=json2vec-automobile model.n_embd=160 model.n_head=8 model.n_layer=5 pipeline.sequence_order=SHUFFLED pipeline.n_bins=10 pipeline.upscale=400 train.batch_size=10 train.n_batches=10000 train.learning_rate=4e-5 cross_val=5-fold
 ```
 
 #### bank dataset
@@ -155,13 +154,11 @@ guild run origami:all dataset=json2vec-mushroom model.n_embd=64 model.n_head=4 m
 guild run origami:all dataset=json2vec-nursery model.n_embd=64 model.n_head=4 model.n_layer=4 pipeline.sequence_order=SHUFFLED pipeline.upscale=40 train.batch_size=100 train.n_batches=10000 cross_val=5-fold
 ```
 
-
 #### seismic dataset
 
 ```
 guild run origami:all dataset=json2vec-seismic model.n_embd=16 model.n_head=4 model.n_layer=4 pipeline.sequence_order=SHUFFLED pipeline.upscale=1000 train.batch_size=100 train.n_batches=10000 cross_val=5-fold
 ```
-
 
 #### student dataset
 
