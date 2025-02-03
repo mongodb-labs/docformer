@@ -1,0 +1,21 @@
+train:
+  description: Train a model on the codenet (Python or Java) dataset
+  main: train
+  flags-dest: namespace:flags
+  flags:
+    language:
+      choices: [python, java]
+      default: java
+    n_batches: 200000
+    n_problems: 250
+    batch_size: 10
+    learning_rate: 1e-3
+    n_embd: 256
+    max_tokens: 4000
+    max_length: 4000
+    eval_every: 1000
+
+  # matches the guild_output_scalars() helper function
+  output-scalars:
+    - step: '\|  step: (\step)'
+    - '\|  (\key): (\value)'
