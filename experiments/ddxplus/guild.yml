@@ -1,0 +1,428 @@
+- model: origami
+  operations:
+    train:
+      main: run_origami
+      flags-dest: namespace:flags
+      flags:
+        model_size:
+          default: medium
+          choices: [xs, small, medium, large, xl]
+        seed: 1234
+        n_batches: 33000
+        eval_data:
+          default: validate
+          choices: [validate, test]
+        limit: 0
+        verbose: False
+
+      requires:
+        - file: .env.local
+        - file: .env.remote
+
+      # matches the guild_output_scalars() helper function
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+- config: shared-flags
+  flags:
+    limit:
+      default: 0
+      nb-replace: 'limit = (\d+)'
+      type: int
+
+- model: lr
+  operations:
+    hyperopt:
+      description: "hyper-parameter tuning of LogisticRegression baseline"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: LogisticRegression
+        n_random_seeds:
+          default: 1
+          nb-replace: 'n_random_seeds = (\d+)'
+        lr_penalty:
+          choices: ["l1", "l2", "none"]
+          nb-replace: 'lr_penalty = (\w+)'
+        lr_max_iter:
+          choices: [10, 50, 100, 300, 500, 1000, 5000]
+          nb-replace: 'lr_max_iter = (\d+)'
+          type: int
+        lr_fit_intercept:
+          choices: [True, False]
+          nb-replace: 'lr_fit_intercept = (\w+)'
+        lr_C:
+          choices: [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5]
+          nb-replace: 'lr_C = ([\d\.e-]+)'
+          type: float
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+    prod:
+      description: "run LogisticRegression model with optimal hyperparams"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: LogisticRegression
+        n_random_seeds:
+          default: 5
+          nb-replace: 'n_random_seeds = (\d+)'
+        lr_penalty:
+          default: "CHANGE HERE"
+          nb-replace: 'lr_penalty = (\w+)'
+        lr_max_iter:
+          default: 0
+          nb-replace: 'lr_max_iter = (\d+)'
+          type: int
+        lr_fit_intercept:
+          default: "CHANGE HERE"
+          nb-replace: 'lr_fit_intercept = (\w+)'
+        lr_C:
+          default: 0
+          nb-replace: 'lr_C = ([\d\.e-]+)'
+          type: float
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+- model: rf
+  operations:
+    hyperopt:
+      description: "hyper-parameter tuning of RandomForest baseline"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: RandomForest
+        n_random_seeds:
+          default: 1
+          nb-replace: 'n_random_seeds = (\d+)'
+        rf_n_estimators:
+          choices: [20, 50, 100, 150, 200]
+          nb-replace: 'rf_n_estimators = (\d+)'
+          type: int
+        rf_max_features:
+          choices: ["log2", "sqrt", "none"]
+          nb-replace: 'rf_max_features = (\w+)'
+        rf_max_depth:
+          choices: [0, 1, 5, 10, 20, 30, 45, "none"]
+          nb-replace: 'rf_max_depth = (\d+)'
+        rf_min_samples_split:
+          choices: [5, 10]
+          nb-replace: 'rf_min_samples_split = (\d+)'
+          type: int
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+    prod:
+      description: "run RandomForest model with optimal hyperparams"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: RandomForest
+        n_random_seeds:
+          default: 5
+          nb-replace: 'n_random_seeds = (\d+)'
+        rf_n_estimators:
+          default: 0
+          nb-replace: 'rf_n_estimators = (\d+)'
+          type: int
+        rf_max_features:
+          default: "CHANGE HERE"
+          nb-replace: 'rf_max_features = (\w+)'
+        rf_max_depth:
+          default: 0
+          nb-replace: 'rf_max_depth = (\d+)'
+        rf_min_samples_split:
+          default: 0
+          nb-replace: 'rf_min_samples_split = (\d+)'
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+- model: xgb
+  operations:
+    hyperopt:
+      description: "hyper-parameter tuning of XGBoost baseline"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: XGBoost
+        n_random_seeds:
+          default: 1
+          nb-replace: 'n_random_seeds = (\d+)'
+        xgb_learning_rate:
+          choices: [1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0]
+          nb-replace: 'xgb_learning_rate = ([\d\.e-]+)'
+          type: float
+        xgb_max_depth:
+          choices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+          nb-replace: 'xgb_max_depth = (\d+)'
+          type: int
+        xgb_subsample:
+          choices: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+          nb-replace: 'xgb_subsample = ([\d\.]+)'
+          type: float
+        xgb_colsample_bytree:
+          choices: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+          nb-replace: 'xgb_colsample_bytree = ([\d\.]+)'
+          type: float
+        xgb_colsample_bylevel:
+          choices: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+          nb-replace: 'xgb_colsample_bylevel = ([\d\.]+)'
+          type: float
+        xgb_min_child_weight:
+          choices:
+            [
+              1e-16,
+              1e-15,
+              1e-14,
+              1e-13,
+              1e-12,
+              1e-11,
+              1e-10,
+              1e-9,
+              1e-8,
+              1e-7,
+              1e-6,
+              1e-5,
+              1e-4,
+              1e-3,
+              1e-2,
+              1e-1,
+              1.0,
+              1e1,
+              1e2,
+              1e3,
+              1e4,
+              1e5,
+            ]
+          nb-replace: 'xgb_min_child_weight = ([\d\.e-]+)'
+          type: float
+        xgb_reg_alpha:
+          choices:
+            [
+              1e-16,
+              1e-15,
+              1e-14,
+              1e-13,
+              1e-12,
+              1e-11,
+              1e-10,
+              1e-9,
+              1e-8,
+              1e-7,
+              1e-6,
+              1e-5,
+              1e-4,
+              1e-3,
+              1e-2,
+              1e-1,
+              1.0,
+              1e1,
+              1e2,
+            ]
+          nb-replace: 'xgb_reg_alpha = ([\d\.e-]+)'
+          type: float
+        xgb_reg_lambda:
+          choices:
+            [
+              1e-16,
+              1e-15,
+              1e-14,
+              1e-13,
+              1e-12,
+              1e-11,
+              1e-10,
+              1e-9,
+              1e-8,
+              1e-7,
+              1e-6,
+              1e-5,
+              1e-4,
+              1e-3,
+              1e-2,
+              1e-1,
+              1.0,
+              1e1,
+              1e2,
+            ]
+          nb-replace: 'xgb_reg_lambda = ([\d\.e-]+)'
+          type: float
+        xgb_gamma:
+          choices:
+            [
+              1e-16,
+              1e-15,
+              1e-14,
+              1e-13,
+              1e-12,
+              1e-11,
+              1e-10,
+              1e-9,
+              1e-8,
+              1e-7,
+              1e-6,
+              1e-5,
+              1e-4,
+              1e-3,
+              1e-2,
+              1e-1,
+              1.0,
+              1e1,
+              1e2,
+            ]
+          nb-replace: 'xgb_gamma = ([\d\.e-]+)'
+          type: float
+        xgb_n_estimators:
+          choices: [100, 200, 500, 1000, 1500, 2000, 3000, 4000, 5000]
+          nb-replace: 'xgb_n_estimators = (\d+)'
+          type: int
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+    prod:
+      description: "run XGBoost model with optimal hyperparams"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: XGBoost
+        n_random_seeds:
+          default: 5
+          nb-replace: 'n_random_seeds = (\d+)'
+        xgb_learning_rate:
+          default: 0
+          nb-replace: 'xgb_learning_rate = ([\d\.e-]+)'
+        xgb_max_depth:
+          default: 0
+          nb-replace: 'xgb_max_depth = (\d+)'
+        xgb_subsample:
+          default: 0
+          nb-replace: 'xgb_subsample = ([\d\.]+)'
+        xgb_colsample_bytree:
+          default: 0
+          nb-replace: 'xgb_colsample_bytree = ([\d\.]+)'
+        xgb_colsample_bylevel:
+          default: 0
+          nb-replace: 'xgb_colsample_bylevel = ([\d\.]+)'
+        xgb_min_child_weight:
+          default: 0
+          nb-replace: 'xgb_min_child_weight = ([\d\.e-]+)'
+        xgb_reg_alpha:
+          default: 0
+          nb-replace: 'xgb_reg_alpha = ([\d\.e-]+)'
+        xgb_reg_lambda:
+          default: 0
+          nb-replace: 'xgb_reg_lambda = ([\d\.e-]+)'
+        xgb_gamma:
+          default: 0
+          nb-replace: 'xgb_gamma = ([\d\.e-]+)'
+        xgb_n_estimators:
+          default: 0
+          nb-replace: 'xgb_n_estimators = (\d+)'
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+- model: lgb
+  operations:
+    hyperopt:
+      description: "hyper-parameter tuning of LightGBM baseline"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: LightGBM
+        n_random_seeds:
+          default: 1
+          nb-replace: 'n_random_seeds = (\d+)'
+        lgb_num_leaves:
+          choices: [5, 10, 20, 30, 40, 50]
+          nb-replace: 'lgb_num_leaves = (\d+)'
+          type: int
+        lgb_max_depth:
+          choices:
+            [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+          nb-replace: 'lgb_max_depth = (\d+)'
+          type: int
+        lgb_learning_rate:
+          choices: [1e-3, 1e-2, 1e-1, 1.0]
+          nb-replace: 'lgb_learning_rate = ([\d\.e-]+)'
+          type: float
+        lgb_n_estimators:
+          choices: [50, 100, 200, 500, 1000, 1500, 2000]
+          nb-replace: 'lgb_n_estimators = (\d+)'
+          type: int
+        lgb_min_child_weight:
+          choices: [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 1e1, 1e2, 1e3, 1e4]
+          nb-replace: 'lgb_min_child_weight = ([\d\.e-]+)'
+          type: float
+        lgb_subsample:
+          choices: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          nb-replace: 'lgb_subsample = ([\d\.]+)'
+          type: float
+        lgb_colsample_bytree:
+          choices: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+          nb-replace: 'lgb_colsample_bytree = ([\d\.]+)'
+          type: float
+        lgb_reg_alpha:
+          choices: [0, 1e-1, 1, 2, 5, 7, 10, 50, 100]
+          nb-replace: 'lgb_reg_alpha = ([\d\.e-]+)'
+        lgb_reg_lambda:
+          choices: [0, 1e-1, 1, 2, 5, 7, 10, 50, 100]
+          nb-replace: 'lgb_reg_lambda = ([\d\.e-]+)'
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
+
+    prod:
+      description: "run LightGBM model with optimal hyperparams"
+      notebook: baseline.ipynb
+      flags:
+        $include: shared-flags
+        model_name: LightGBM
+        n_random_seeds:
+          default: 5
+          nb-replace: 'n_random_seeds = (\d+)'
+        lgb_num_leaves:
+          default: 0
+          nb-replace: 'lgb_num_leaves = (\d+)'
+        lgb_max_depth:
+          default: 0
+          nb-replace: 'lgb_max_depth = (\d+)'
+          type: int
+        lgb_learning_rate:
+          default: 0
+          nb-replace: 'lgb_learning_rate = ([\d\.e-]+)'
+        lgb_n_estimators:
+          default: 0
+          nb-replace: 'lgb_n_estimators = (\d+)'
+        lgb_min_child_weight:
+          default: 0
+          nb-replace: 'lgb_min_child_weight = ([\d\.e-]+)'
+        lgb_subsample:
+          default: 0
+          nb-replace: 'lgb_subsample = ([\d\.]+)'
+        lgb_colsample_bytree:
+          default: 0
+          nb-replace: 'lgb_colsample_bytree = ([\d\.]+)'
+          type: float
+        lgb_reg_alpha:
+          default: 0
+          nb-replace: 'lgb_reg_alpha = ([\d\.e-]+)'
+        lgb_reg_lambda:
+          default: 0
+          nb-replace: 'lgb_reg_lambda = ([\d\.e-]+)'
+
+      output-scalars:
+        - step: '\|  step: (\step)'
+        - '\|  (\key): (\value)'
