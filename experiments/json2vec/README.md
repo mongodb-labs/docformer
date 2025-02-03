@@ -1,73 +1,8 @@
-<!-- ## General Notes
+# json2vec Experiments
 
-### Cross-validation and train/test splits
+We compare our model against baselines (Logistic Regression, Random Forests, XGBoost, LightGBM) on the same benchmark datasets proposed in [A Framework for End-to-End Learning on Semantic Tree-Structured Data](https://arxiv.org/abs/2002.05707) by William Woof and Ke Chen. These datasets were originally taken from the UCI repository and have been converted from tabular form to JSON structure.
 
-The behaviour is controlled by the `cross_val` flag.
-
-- `cross_val=none` disables cross-validation and uses a simple train/test split
-- `cross_val=5-fold` creates 5 folds for cross-validation
-- `cross_val=catalog` uses the pre-defined split indices in the `openml.catalog` collection (only for OpenML datasets)
-
-Additional parameters:
-
-- `train.test_split` is the fraction of the test dataset when cross-validation is disabled
-- `train.shuffle_split` whether or not to shuffle rows (both for cross-validation splits and train/test splits)
-
-Some examples below:
-
-#### Single run with default train/test split
-
-Default test split is 0.2 and shuffled.
-
-```
-guild run <model>:all dataset=<dataset> cross_val=none
-```
-
-#### Single run with custom train/test split
-
-We choose a split of 60/40 and no shuffling.
-
-```
-guild run <model>:all dataset=<dataset> cross_val=none train.test_split=0.4 train.shuffle_split=no
-```
-
-#### 5-fold cross validation, unshuffled
-
-`train.test_split` is ignored.
-
-```
-guild run <model>:all dataset=<dataset> cross_val=5-fold train.shuffle_split=no
-```
-
-#### k-fold cross-validation from catalog
-
-This loads the split indices in the `openml.catalog` collection, which are stored
-under the field path `task.cross_validation`.
-
-`k` is usually 10, but may potentially differ, based on the splits defined in the `catalog` collection.
-
-`train.test_split` and `train.shuffle_split` are ignored.
-
-```
-guild run <model>:all dataset=tictactoe cross_val=catalog
-``` -->
-
-# Reproducing the results from our paper
-
-We use the open source library [guild.ai](https://guild.ai) for experiment management and result tracking.
-
-### Datasets
-
-We bundled all datasets used in the paper in a convenient [MongoDB dump file](). To reproduce the results, first
-you need MongoDB installed on your system (or a remote server). Then, download the dump file, unzip it, and restore it into your MongoDB instance:
-
-```
-mongorestore dump/
-```
-
-This assumes your `mongod` server is running on `localhost` on default port 27017 and without authentication. If your setup varies, consult the [documentation](https://www.mongodb.com/docs/database-tools/mongorestore/) for `mongorestore` on how to restore the data.
-
-If your database setup (URI, port, authentication) differs, also make sure to update the [`.env.local`](.env.local) file in this directory accordingly.
+First, make sure you have restored the datasets from the mongo dump file as described in [../EXPERIMENTS.md](../EXPERIMENTS.md). All commands (see below) must be run from the `json2vec` directory.
 
 ### Hyper-parameter tuning
 
