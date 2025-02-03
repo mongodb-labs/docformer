@@ -2,7 +2,7 @@
 
 In this experiment we train the model on the [DDXPlus dataset](https://arxiv.org/abs/2205.09148), a dataset for automated medical diagnosis. We devise a task to predict the most likely differential diagnoses for each instance, a multi-label prediction task.
 
-For ORIGAMI, we reformat the dataset into JSON format with two different representations:
+For ORiGAMi, we reformat the dataset into JSON format with two different representations:
 
 - A flat representation, in which we store the evidences and their values as strings.
 - An object representation, where the evidences are stored as object containing array values.
@@ -15,61 +15,51 @@ First, make sure you have restored the datasets from the mongo dump file as desc
 
 ## ORiGAMi
 
+We train a model with the `medium` size preset by default: 6 layers, 6 heads, 192 embedding dimensionality. To train with other model sizes, append `model_size=<size>` to the command, using one of the following options: `xs`, `small`, `medium`, `large`, `xl`.
+
+To train and evaluate ORiGAMi on the flat evidences structure, run the following:
+
+```bash
+guild run origami:train evidences=flat eval_data=test seed="[1, 2, 3, 4, 5]"
+```
+
+For the object representation of evidences, run instead:
+
+```bash
+guild run origami:train evidences=object eval_data=test seed="[1, 2, 3, 4, 5]"
+```
+
+This will repeat the training and evaluation 5 times with different random seeds and evaluate on the test set.
+
 ## Baselines
 
-### Single Run
+### Hyperparameter optimization
 
-Running a single model, using `guild.yml` settings, as:
-
-```bash
-guild run lr:hyperopt lr_C=10.0
-```
-
-**Note**: parameters passed through the CLI overwrite values in the notebook and in `guild.yml`.
-
-It is also possible to run the notebook directly, though this will create a number of additional quantities tracked
-by guild (e.g. `TARGET_FIELD`) which we may not be interested in, and as such, this method is for quick local checks only.
+First perform HPO, supplying the `<model>` as one of `lr` (Logistic Regression), `rf` (Random Forest), `xgb` (XGBoost), `lgb` (LightGBM) and the appropriate number of trial runs with `--max-trials <num>`, and give the run a name with `<label>`, e.g.
 
 ```bash
-guild run baseline.ipynb model_name=LogisticRegression lr_C=0.1
+ NUMPY_EXPERIMENTAL_DTYPE_API=1 guild run lr:hyperopt --optimizer random --max-trials 20 --label <label>
 ```
 
-### Experimental Runs
-
-First perform HPO, supplying `limit=0` and the appropriate number of `--max-trials`:
+To find the best parameters on the validation dataset, use:
 
 ```bash
-guild run lr:hyperopt limit=1000 --optimizer random --max-trials 3
+guild compare -Fl <label> -u
 ```
 
-Once the optimal hyperparameters are found:
+Sort the `f1_val_mean` column in descending order (press `S` key) and pick the run ID (first column) of the best configuration.
 
-- update the `prod` sections in the `guild.yml` file in this folder with the optimal hyperparameters values
-- run the model with the optimal hyperparameters, 5 repetitions with 5 different seeds:
+Get the hyperparameters (= flags) with `guild runs info <run-id>`.
+
+### Evaluate best hyperparameters on test dataset
+
+Once the optimal hyperparameters are found, run the model with the optimal hyperparameters, e.g.:
 
 ```bash
-guild run lr:prod
+guild run lr:train <param1>=<value1> <param2=value2> ...
 ```
 
-## Retrieving Results
+Replace the `<param>` and `<value>` placeholders with the optimal hyperparameters. You can ignore `model_name` and `n_random_seeds` here.
+By default, the evaluation is done 5 times with different random seeds.
 
-To retrieve the values for the individual runs, we have 2 alternatives:
-
-```python
-from axon.utils.guild import get_runs
-from guild import ipy, tfevent
-
-# 1st alternative
-runs = get_runs()
-run = runs[0]
-
-for _path, _digest, scalars in tfevent.scalar_readers(run.dir):
-    for tag, value, step in scalars:
-        print(tag, value, step)
-
-# 2nd alternative (as pandas dataframe)
-runs = ipy.runs()
-sd_df = runs.scalars_detail()
-sd_df['run_id'] = sd_df['run'].apply(lambda x: x.id)
-print(sd_df[sd_df['run_id'] == run.id])
-```
+The `<metric>_test_mean` and `<metric_test_val>` scores show the evaluation on the test dataset, where `<metric>` is one of `f1`, `precision`, `recall`.

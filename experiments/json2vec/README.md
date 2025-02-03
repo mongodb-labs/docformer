@@ -42,7 +42,7 @@ guild runs info <run-id>
 To run a particular parameter configuration on a dataset, use the following command:
 
 ```
-guild run <model>:all dataset=<dataset> <param1>=<value1> <param2=value>
+guild run <model>:all dataset=<dataset> <param1>=<value1> <param2=value> ...
 ```
 
 - `<model>` is the model name, choose from `origami`, `logreg`, `rf`, `xgboost`, `lightgbm`.

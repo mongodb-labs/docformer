@@ -30,24 +30,27 @@ set_seed(flags.seed)
 
 # load PATHOLOGY fields for test data
 client = MongoClient(secrets["MONGO_URI"])
-collection_test = client.ddxplus[f"{flags.eval_data}-noprob"]
+collection_test = client.ddxplus[f"{flags.eval_data}-semistructured"]
 
 pathologies_test = [
     d["PATHOLOGY"] for d in collection_test.find({}, projection={"PATHOLOGY": 1}, limit=flags.limit, sort=[("_id", 1)])
 ]
 
 # now load data for training and evaluation (test or validate), same sort order
-PROJECTION = {"_id": 0, "PATHOLOGY": 0, "DIFFERENTIAL_DIAGNOSIS": 0}
+if flags.evidences == "flat":
+    PROJECTION = {"_id": 0, "PATHOLOGY": 0, "DIFFERENTIAL_DIAGNOSIS": 0, "EVIDENCES_JSON_V1": 0, "EVIDENCES_JSON_V2": 0}
+elif flags.evidences == "object":
+    PROJECTION = {"_id": 0, "PATHOLOGY": 0, "DIFFERENTIAL_DIAGNOSIS": 0, "EVIDENCES": 0, "EVIDENCES_JSON_V2": 0}
 TARGET_FIELD = "DIFFERENTIAL_DIAGNOSIS_NOPROB"
 
 train_docs_df = load_df_from_mongodb(
-    secrets["MONGO_URI"], "ddxplus", "train-noprob", projection=PROJECTION, limit=flags.limit, sort=[("_id", 1)]
+    secrets["MONGO_URI"], "ddxplus", "train-semistructured", projection=PROJECTION, limit=flags.limit, sort=[("_id", 1)]
 )
 
 test_docs_df = load_df_from_mongodb(
     secrets["MONGO_URI"],
     "ddxplus",
-    f"{flags.eval_data}-noprob",
+    f"{flags.eval_data}-semistructured",
     projection=PROJECTION,
     limit=flags.limit,
     sort=[("_id", 1)],
@@ -107,10 +110,9 @@ metrics = Metrics(model)
 
 
 def progress_callback(model):
-    global test_dataset
-    if model.batch_num % train_config.eval_every == 0:
+    if model.batch_num % train_config.print_every == 0:
         print_guild_scalars(
-            step=f"{int(model.batch_num / train_config.eval_every)}",
+            step=f"{int(model.batch_num / train_config.print_every)}",
             epoch=model.epoch_num,
             batch_num=model.batch_num,
             batch_dt=f"{model.batch_dt * 1000:.2f}",
@@ -145,6 +147,10 @@ def get_ddx_arr(ddx_arr):
         # we return an empty list, which will lead to prec = rec = 0
         return []
 
+    # likewise, if the array contains anything other than strings, return empty list
+    if not all(isinstance(x, str) for x in ddx_arr):
+        return []
+
     if TARGET_FIELD.endswith("_NOPROB"):
         return ddx_arr
 
@@ -160,6 +166,8 @@ gtpa = []
 for i, row in df.iterrows():
     y_true = get_ddx_arr(row["target"])
     y_pred = get_ddx_arr(row["predicted"])
+
+    print(f"{i: 4} - {y_true} {y_pred}")
 
     intersection = set(y_true).intersection(set(y_pred))
     ddr.append(len(intersection) / len(y_true))
