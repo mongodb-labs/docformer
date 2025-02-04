@@ -30,7 +30,7 @@ set_seed(1234)
 TARGET_FIELD = "problem"
 
 client = MongoClient("mongodb://localhost:27017")
-collection = client[f"codenet_{flags.language}"].train
+collection = client["codenet_java"].train
 
 target_problems = collection.distinct(TARGET_FIELD)
 num_problems = len(target_problems)
@@ -42,7 +42,7 @@ print(f"training on {flags.n_problems} problems (out of {num_problems})")
 
 train_docs_df = load_df_from_mongodb(
     "mongodb://localhost:27017",
-    f"codenet_{flags.language}",
+    "codenet_java",
     "train",
     filter={"problem": {"$in": target_problems}},
     projection={"_id": 0, "filePath": 0},
@@ -50,11 +50,14 @@ train_docs_df = load_df_from_mongodb(
 
 test_docs_df = load_df_from_mongodb(
     "mongodb://localhost:27017",
-    f"codenet_{flags.language}",
+    "codenet_java",
     "test",
     filter={"problem": {"$in": target_problems}},
     projection={"_id": 0, "filePath": 0},
 )
+
+num_train_inst = len(train_docs_df)
+num_test_inst = len(test_docs_df)
 
 # create train and test pipelines
 pipes = {
@@ -95,8 +98,10 @@ encoder = pipes["encoder"].encoder
 block_size = pipes["padding"].length
 
 # print data stats
-print(f"original len train: {len(train_docs_df)}, len test: {len(test_docs_df)}")
-print(f"after drop len train: {len(train_df)}, len test: {len(test_df)}")
+print(
+    f"dropped {(1 - (len(train_df) / num_train_inst)) * 100:.2f}% training instances, and "
+    f"{(1 - (len(test_df) / num_test_inst)) * 100:.2f}% test instances."
+)
 print(f"vocab size {encoder.vocab_size}")
 print(f"block size {block_size}")
 
@@ -158,7 +163,7 @@ def progress_callback(model):
     if model.batch_num % train_config.eval_every == 0:
         try:
             # train_acc = predictor.accuracy(train_dataset.sample(n=100))
-            test_acc = predictor.accuracy(test_dataset.sample(n=100))
+            test_acc = predictor.accuracy(test_dataset.sample(n=100), show_progress=True)
             print_guild_scalars(
                 step=f"{int(model.batch_num)}",
                 # train_acc=f"{train_acc:.4f}",
