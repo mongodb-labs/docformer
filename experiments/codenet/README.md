@@ -16,3 +16,5 @@ To run the training and evaluation on the test set, use:
 ```bash
 guild run train
 ```
+
+Note: Training with the default parameters requires est. 50 GB of GPU RAM.
