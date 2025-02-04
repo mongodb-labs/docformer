@@ -11,7 +11,7 @@ We compare our model against baselines: Logistic Regression, Random Forests, XGB
 flat representation by converting the evidence-value strings into a multi-label binary matrix. We wrap each model in a scikit-learn
 [MultiOutputClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html).
 
-First, make sure you have restored the datasets from the mongo dump file as described in [../EXPERIMENTS.md](../EXPERIMENTS.md). All commands (see below) must be run from the `ddxplus` directory.
+First, make sure you have restored the datasets from the mongo dump file as described in [../README.md](../README.md). All commands (see below) must be run from the `ddxplus` directory.
 
 ## ORiGAMi
 

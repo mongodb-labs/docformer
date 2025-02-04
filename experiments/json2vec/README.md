@@ -2,7 +2,7 @@
 
 We compare our model against baselines (Logistic Regression, Random Forests, XGBoost, LightGBM) on the same benchmark datasets proposed in [A Framework for End-to-End Learning on Semantic Tree-Structured Data](https://arxiv.org/abs/2002.05707) by William Woof and Ke Chen. These datasets were originally taken from the UCI repository and have been converted from tabular form to JSON structure.
 
-First, make sure you have restored the datasets from the mongo dump file as described in [../EXPERIMENTS.md](../EXPERIMENTS.md). All commands (see below) must be run from the `json2vec` directory.
+First, make sure you have restored the datasets from the mongo dump file as described in [../README.md](../README.md). All commands (see below) must be run from the `json2vec` directory.
 
 ### Hyper-parameter tuning
 

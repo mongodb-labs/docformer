@@ -4,7 +4,7 @@ In this experiment, we convert Java code snippets from the [CodeNet](https://dev
 We then train an ORiGAMi model on these ASTs for a classification task, where the programming problem ID is the target label. More details on the dataset and classification task can be found
 in the paper [CodeNet: A Large-Scale AI for Code Dataset for Learning a Diversity of Coding Tasks](https://arxiv.org/abs/2105.12655) by Ruchir Puri et al.
 
-First, make sure you have restored the datasets from the mongo dump file as described in [../EXPERIMENTS.md](../EXPERIMENTS.md). All commands (see below) must be run from the `codenet` directory.
+First, make sure you have restored the datasets from the mongo dump file as described in [../README.md](../README.md). All commands (see below) must be run from the `codenet` directory.
 
 ### Training and evaluating the model
 
