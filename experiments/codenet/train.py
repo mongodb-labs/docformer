@@ -19,10 +19,11 @@ from origami.preprocessing import (
 )
 from origami.utils.common import set_seed
 from origami.utils.config import GuardrailsMethod, ModelConfig, PositionEncodingMethod, TrainConfig
-from origami.utils.guild import print_guild_scalars
+from origami.utils.guild import load_secrets, print_guild_scalars
 
 # populated by guild
 flags = SimpleNamespace()
+secrets = load_secrets()
 
 # for reproducibility
 set_seed(1234)
@@ -30,7 +31,7 @@ set_seed(1234)
 TARGET_FIELD = "problem"
 UPSCALE = 2
 
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(secrets["MONGO_URI"])
 collection = client["codenet_java"].train
 
 target_problems = collection.distinct(TARGET_FIELD)
