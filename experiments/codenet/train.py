@@ -28,6 +28,7 @@ flags = SimpleNamespace()
 set_seed(1234)
 
 TARGET_FIELD = "problem"
+UPSCALE = 2
 
 client = MongoClient("mongodb://localhost:27017")
 collection = client["codenet_java"].train
@@ -62,7 +63,7 @@ num_test_inst = len(test_docs_df)
 # create train and test pipelines
 pipes = {
     # --- train only ---
-    "upscaler": UpscalerPipe(n=2),
+    "upscaler": UpscalerPipe(n=UPSCALE),
     "permuter": DocPermuterPipe(shuffle_arrays=True),
     # --- test only ---
     "target": TargetFieldPipe(TARGET_FIELD),
@@ -99,7 +100,7 @@ block_size = pipes["padding"].length
 
 # print data stats
 print(
-    f"dropped {(1 - (len(train_df) / num_train_inst)) * 100:.2f}% training instances, and "
+    f"dropped {(1 - (len(train_df) / (UPSCALE * num_train_inst))) * 100:.2f}% training instances, and "
     f"{(1 - (len(test_df) / num_test_inst)) * 100:.2f}% test instances."
 )
 print(f"vocab size {encoder.vocab_size}")
@@ -194,3 +195,6 @@ print_guild_scalars(
     step=f"{int(model.batch_num / train_config.eval_every)}",
     test_acc=f"{test_acc:.4f}",
 )
+
+dropped_ratio = 1 - (len(test_df) / num_test_inst)
+print(f"Final test accuracy when taking into account the dropped instances: {(1 - dropped_ratio) * test_acc:.4f}%")
