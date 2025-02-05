@@ -29,6 +29,13 @@ from .utils import create_projection, load_data
     help="path to write trained model",
 )
 @click.option("--seed", type=int, default=1234, show_default=True, help="random seed")
+@click.option(
+    "--set-parameter",
+    "-p",
+    type=str,
+    multiple=True,
+    help="set additional config parameters, format: key.subkey=value. Multiple parameters can be set.",
+)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 @optgroup.group("Source Options")
 @optgroup.option("--source-db", "-d", type=str, help="database name, only used when SOURCE is a MongoDB URI.")
@@ -38,14 +45,7 @@ from .utils import create_projection, load_data
 @optgroup.option("--skip", "-s", type=int, default=0, help="number of documents to skip")
 @optgroup.option("--limit", "-l", type=int, default=0, help="limit the number of documents to load")
 @optgroup.group("Config Options")
-@optgroup.option("--config-file", "-C", type=click.File("r"), help="path to config file")
-@optgroup.option(
-    "--set-parameter",
-    "-P",
-    type=str,
-    multiple=True,
-    help="set additional config parameters, format: key.subkey=value. Multiple parameters can be set.",
-)
+# @optgroup.option("--config-file", "-C", type=click.File("r"), help="path to config file")
 @optgroup.option(
     "--max-vocab-size",
     "-V",
@@ -56,7 +56,7 @@ from .utils import create_projection, load_data
 )
 @optgroup.option(
     "--num-layers",
-    "-L",
+    "-T",
     type=int,
     default=4,
     show_default=True,
@@ -77,6 +77,14 @@ from .utils import create_projection, load_data
     default=128,
     show_default=True,
     help="hidden dimensionality of transformer layers",
+)
+@optgroup.option(
+    "--learning-rate",
+    "-L",
+    type=float,
+    default=1e-3,
+    show_default=True,
+    help="max. learning rate of the model",
 )
 @optgroup.option(
     "--num-batches", "-N", type=int, default=10000, show_default=True, help="number of batches to train on"
@@ -152,8 +160,7 @@ def train(source: str, **kwargs):
     # train configs
     config.train.n_batches = kwargs["num_batches"]
     config.train.batch_size = kwargs["batch_size"]
-    config.train.learning_rate = 1e-3
-    config.train.n_warmup_batches = 1000
+    config.train.learning_rate = kwargs["learning_rate"]
     config.train.print_every = 10
     config.train.eval_every = 100
     config.train.test_split = kwargs["val_split_ratio"]
