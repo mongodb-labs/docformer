@@ -153,12 +153,9 @@ class TestTargetFieldPipe(unittest.TestCase):
 
         self.assertIn("target", df.columns)
 
-        for i, (doc, target) in enumerate(zip(df["docs"], df["target"])):
-            if target == Symbol.UNKNOWN:
-                self.assertNotIn("b", doc)
-            else:
-                self.assertIn("b", doc)
-                self.assertEqual(doc["b"], target)
+        for doc, target in zip(df["docs"], df["target"]):
+            self.assertIn("b", doc)
+            self.assertEqual(doc["b"], target)
 
 
 class TestDocTokenizerPipe(unittest.TestCase):

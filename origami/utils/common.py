@@ -282,13 +282,10 @@ def get_value_at_path(d: dict, path: List[str]) -> Tuple[Any, bool]:
 def reorder_with_target_last(d: dict, target_path: str) -> Tuple[OrderedDict, Any]:
     """
     Reorder dictionary so target field appears last, maintaining nested structure.
-    If target field doesn't exist, returns (OrderedDict(d), Symbol.UNKNOWN).
+    Creates missing intermediate paths and sets target to Symbol.UNKNOWN if not found.
     """
     path_components = parse_path(target_path)
     target_value, found = get_value_at_path(d, path_components)
-
-    if not found:
-        return OrderedDict(d), Symbol.UNKNOWN
 
     def reorder_level(current_dict: dict, remaining_path: List[str]) -> OrderedDict:
         if not remaining_path:
@@ -302,18 +299,82 @@ def reorder_with_target_last(d: dict, target_path: str) -> Tuple[OrderedDict, An
             if k != current_target:
                 result[k] = v if not isinstance(v, dict) else reorder_level(v, [])
 
-        # Add target field last
+        # Handle the target path
         if current_target in current_dict:
             target_dict = current_dict[current_target]
-            if len(remaining_path) > 1:
-                # If we have more path components, recurse with remaining path
-                result[current_target] = reorder_level(target_dict, remaining_path[1:])
-            else:
-                # If this is the final path component, add it last
-                result[current_target] = (
-                    target_dict if not isinstance(target_dict, dict) else reorder_level(target_dict, [])
-                )
+        else:
+            # Create empty dict for missing intermediate paths
+            target_dict = {} if len(remaining_path) > 1 else Symbol.UNKNOWN
+
+        if len(remaining_path) > 1:
+            # If we have more path components, recurse with remaining path
+            result[current_target] = reorder_level(target_dict, remaining_path[1:])
+        else:
+            # If this is the final path component, add it last
+            result[current_target] = (
+                target_dict if not isinstance(target_dict, dict) else reorder_level(target_dict, [])
+            )
 
         return result
 
-    return reorder_level(d, path_components), target_value
+    # Check if we're trying to traverse through a non-dict value
+    current = d
+    for i, component in enumerate(path_components[:-1]):
+        if component in current and not isinstance(current[component], dict):
+            # If we hit a non-dict value in the path, treat the entire remaining path
+            # as a top-level field
+            new_target = ".".join(path_components[i:])
+            result = OrderedDict()
+            for k, v in d.items():
+                if k != new_target:
+                    result[k] = v if not isinstance(v, dict) else reorder_level(v, [])
+            result[new_target] = Symbol.UNKNOWN
+            return result, Symbol.UNKNOWN
+
+        if component not in current:
+            break
+        current = current[component]
+
+    return reorder_level(d, path_components), target_value if found else Symbol.UNKNOWN
+
+
+# def reorder_with_target_last(d: dict, target_path: str) -> Tuple[OrderedDict, Any]:
+#     """
+#     Reorder dictionary so target field appears last, maintaining nested structure.
+#     If target field doesn't exist, returns (OrderedDict(d), Symbol.UNKNOWN).
+#     """
+#     path_components = parse_path(target_path)
+#     target_value, found = get_value_at_path(d, path_components)
+
+#     if not found:
+#         od = OrderedDict(d)
+#         od[target_path] = Symbol.UNKNOWN
+#         return od, Symbol.UNKNOWN
+
+#     def reorder_level(current_dict: dict, remaining_path: List[str]) -> OrderedDict:
+#         if not remaining_path:
+#             return OrderedDict(current_dict)
+
+#         current_target = remaining_path[0]
+#         result = OrderedDict()
+
+#         # Add all non-target fields first
+#         for k, v in current_dict.items():
+#             if k != current_target:
+#                 result[k] = v if not isinstance(v, dict) else reorder_level(v, [])
+
+#         # Add target field last
+#         if current_target in current_dict:
+#             target_dict = current_dict[current_target]
+#             if len(remaining_path) > 1:
+#                 # If we have more path components, recurse with remaining path
+#                 result[current_target] = reorder_level(target_dict, remaining_path[1:])
+#             else:
+#                 # If this is the final path component, add it last
+#                 result[current_target] = (
+#                     target_dict if not isinstance(target_dict, dict) else reorder_level(target_dict, [])
+#                 )
+
+#         return result
+
+#     return reorder_level(d, path_components), target_value

@@ -172,7 +172,7 @@ class TestDictionaryUtils(unittest.TestCase):
     def test_empty_dict(self):
         result, value = reorder_with_target_last({}, "any_key")
         self.assertEqual(value, Symbol.UNKNOWN)
-        self.assertEqual(dict(result), {})
+        self.assertEqual(dict(result), {"any_key": Symbol.UNKNOWN})
 
     def test_various_value_types(self):
         input_dict = {
@@ -222,19 +222,30 @@ class TestDictionaryUtils(unittest.TestCase):
 
     def test_missing_field(self):
         input_dict = {"a": 1, "b": {"b1": True, "b2": False}, "c": "test"}
+
         # Test missing top-level field
         result, value = reorder_with_target_last(input_dict, "nonexistent")
-        self.assertEqual(dict(result), input_dict)  # Structure preserved
+        expected = {"a": 1, "b": {"b1": True, "b2": False}, "c": "test", "nonexistent": Symbol.UNKNOWN}
+        self.assertEqual(dict(result), expected)
         self.assertEqual(value, Symbol.UNKNOWN)
 
         # Test missing nested field
         result, value = reorder_with_target_last(input_dict, "b.nonexistent")
-        self.assertEqual(dict(result), input_dict)  # Structure preserved
+        expected = {"a": 1, "b": {"b1": True, "b2": False, "nonexistent": Symbol.UNKNOWN}, "c": "test"}
+        self.assertEqual(dict(result), expected)
         self.assertEqual(value, Symbol.UNKNOWN)
 
         # Test path through non-dict value
         result, value = reorder_with_target_last(input_dict, "a.something")
-        self.assertEqual(dict(result), input_dict)  # Structure preserved
+        # Should still treat 'a' as a terminal value since it's not a dict
+        expected = {"a": 1, "b": {"b1": True, "b2": False}, "c": "test", "a.something": Symbol.UNKNOWN}
+        self.assertEqual(dict(result), expected)
+        self.assertEqual(value, Symbol.UNKNOWN)
+
+        # Additional test for multiple levels of missing nested fields
+        result, value = reorder_with_target_last(input_dict, "b.new.deeper")
+        expected = {"a": 1, "b": {"b1": True, "b2": False, "new": {"deeper": Symbol.UNKNOWN}}, "c": "test"}
+        self.assertEqual(dict(result), expected)
         self.assertEqual(value, Symbol.UNKNOWN)
 
 

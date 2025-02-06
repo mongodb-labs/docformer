@@ -1,6 +1,6 @@
 # Command Line Interface
 
-An ORiGAMi model can be trained through a command line interface (CLI).
+An ORiGAMi model can be trained through a command line interface (CLI) from a MongoDB collection or JSON or CSV files.
 
 ## `train` Command
 
@@ -254,6 +254,121 @@ Several parameters can be changed by providing the `--set-parameter` or `-p` opt
 
 ## `predict` command
 
+The general invocation of the `predict` command is:
+
+```shell
+origami predict SOURCE [OPTIONS]
 ```
 
+The `predict` command allows to make a prediction from a trained model for a given target field in the dataset. If the target field is present in the dataset, the values will be used as ground through to calculate prediction accuracy. This is useful to validate a model's accuracy on a separate test dataset.
+
+The predictions are printed to stdout, while all other output (e.g. the accuracy result or output from the `--verbose` option) is printed to stderr. This allows to store only the predictions by piping them into a file, e.g.
+
+```shell
+origami predict <SOURCE> [OPTIONS] > predictions.txt
+```
+
+### General Options
+
+#### Help and Verbosity
+
+To list an overview of the available options, use the `--help` option.
+
+To print more verbose information about pipeline execution, model details and configuration options, use the `--verbose` (or `-v`) option.
+
+#### Model Path
+
+Specify the trained model path with the `--model-path` (or `-m`) option. If no path is specified, the default path and filename of `./model.origami` will be used.
+
+For example, to make predictions from a model located at `./snapshots/orders-dev.origami`, use the followig command:
+
+```shell
+origami predict <SOURCE> --model-path ./snapshots/orders-dev.origami
+```
+
+#### Target Field
+
+To make predictions, a target field needs to be specified. This is a required parameter for the `predict` command. Use the `--target-field` (or `-t`) option to provide the name of the target field. Currently, only top-level fields are supported as target.
+
+For example, to make predictions for the `income` field in a collection, use the following command:
+
+```shell
+origami predict <SOURCE> --target-field income
+```
+
+### Source Selection
+
+The CLI allows making predictions from a number of different sources:
+
+- A running MongoDB instance: use `mongodb://<host>:<port>` connection URI as SOURCE and `--source-db`, `--source-coll` options to specify the database and collection name
+- a `.jsonl` file, where each line is a JSON object
+- a `.json` file, which needs to contain an single array of JSON objects
+- a `.csv` file with header row
+- a directory containing any of the supported file types: specify the directory path as SOURCE
+
+### Additional Source Options
+
+#### MongoDB Source
+
+When the source is a MongoDB instance, the parameters `--source-db` (or `-d`) and `--source-coll` (or `-c`) are required.
+
+For example, when the source is the `ecommerce.orders` namespace in a MongoDB instance running on localhost and standard port 27017, the source can be specified as:
+
+```shell
+origami predict mongodb://localhost:27017 --source-db ecommerce --source-coll orders
+```
+
+When training from a file or a directory containing supported files, these two options are ignored.
+
+#### Including and Excluding Fields
+
+To in- or exclude fields in the objects when making predictions, use either the `--include-fields` (or `-i`) or the `--exclude-fields` (or `-e`) options, followed by a comma-separated list of field names. Note that if neither option is specified, the `_id` field is excluded by default (if it exists).
+
+Fields can be excluded during prediction even if the model was trained on the fields. This can be useful for feature selection to determine which of the fields are most helpful in making predictions.
+
+Nested fields can be included or excluded by using dot notation, e.g. `items.color` for a `color` field inside an `items` array of sub-documents.
+
+For example, to make predictions only from the fields `price`, `items`, `category`, use the following command:
+
+```shell
+origami predict <SOURCE> --include-fields price,items,category
+```
+
+To exclude the field `extra.comment` in a dataset (in addition to `_id`), use the following command:
+
+```shell
+origami predict <SOURCE> --exclude-fields _id,extra.comment
+```
+
+#### Limit and Skip
+
+To limit the number of objects to make predictions for, use the option `--limit` (or `-l`).
+
+For example, to only make predictions on the first 1000 objects, use the following command:
+
+```shell
+origami predict <SOURCE> --limit 1000
+```
+
+To skip a number of objects to make predictions for, use the option `--skip` (or `-s`).
+
+For example, to ignore the first 1000 objects from the source, use the following command:
+
+```shell
+origami predict <SOURCE> --skip 1000
+```
+
+### Output Format Options
+
+#### JSON Output
+
+By default, the `predict` command only prints the values for the target field. Use the `--json` (or `-j`) option to print the entire
+JSON object including the target field and predicted value.
+
+This option is useful if you want to fill in missing values in a dataset but keep the format as JSON. You can also pipe the output to `mongoimport` to write the resulting documents back to a MongoDB collection.
+
+For example, if you have a MongoDB collection `product.catalog` where the `category` field is missing, and you want to use the models' predictions to fill in the values, you can use the following command:
+
+```shell
+origami predict <URI> -d product -c catalog -t category --json | mongoimport -d product -c catalog_predicted
 ```
