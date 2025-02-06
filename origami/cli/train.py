@@ -110,7 +110,7 @@ from .utils import create_projection, load_data
     "--guardrails",
     "-G",
     type=click.Choice(["NONE", "STRUCTURE_ONLY", "STRUCTURE_AND_VALUES"]),
-    default="STRUCTURE_ONLY",
+    default="STRUCTURE_AND_VALUES",
     help="guardrails settings",
 )
 @optgroup.option(

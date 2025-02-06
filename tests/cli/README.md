@@ -210,14 +210,7 @@ By default, ORiGAMi's preprocessing pipeline creates field tokens containing the
 
 When enabled, it will create field tokens only based on the inner most field name. In the example above, this would create a field token for the field name `city` only. In such cases, this can reduce the vocabulary size significantly.
 
-    -P, --set-parameter TEXT      set additional config parameters, format: key.subkey=value. Multiple parameters can
-                                  be set.
-    -V, --max-vocab-size INTEGER  maximum number of tokens in the vocabulary
-    -G, --guardrails [NONE|STRUCTURE_ONLY|STRUCTURE_AND_VALUES]
-                                  guardrails settings
-    --ignore-field-path           By default, the full field path (i.e. `foo.bar.baz`) is used for field tokens. This
-                                  option will ignore the full path and only use the last field name (`bar`). Use this
-                                  for deeply nested object.
+Note that this option is not compatible with the guardrails mode `STRUCTURE_AND_VALUES`, as the schema parser is no longer able to uniquely identify fields and their values. Using this option implicitly sets `--guardrails STRUCTURE_ONLY` as well.
 
 #### Limiting Vocabulary Size
 
@@ -231,7 +224,7 @@ origami train <SOURCE> --max-vocab-size 1000
 
 ### Evaluation Options
 
-During training, it can be helpful to monitor classification accuracy on a portion of the training (and optionally validation) set. For this evaluation, a target field to predict needs to be specified with the `--target-field` (or `-t`) option.
+During training, it can be helpful to monitor classification accuracy on a portion of the training (and optionally validation) set. For this evaluation, a target field to predict needs to be specified with the `--target-field` (or `-t`) option. Currently, only top-level fields are supported as target fields.
 
 If specificed, ORiGAMi will take random samples of 5 \* batch size instances from the training set and print out classification accuracy (`train_acc`) over that sample after every 100 batches.
 

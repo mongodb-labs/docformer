@@ -99,7 +99,7 @@ def detokenize(tokens: list) -> dict:
 
 
 def target_collate_fn(target_token_id: int):
-    def collate_fn(tokens: torch.tensor) -> torch.tensor:
+    def collate_fn(tokens: list[torch.tensor]) -> torch.tensor:
         """collate function that only returns sequences up to a target token (incl.). Assumes
         the target token is at the same position in each sequence. (use with TargetTokenBatchSampler)"""
         tokens = default_collate(tokens)

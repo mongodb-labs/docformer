@@ -1,8 +1,8 @@
 import click
 
-from .generate import generate
-from .predict import predict
-from .train import train
+from origami.cli.generate import generate
+from origami.cli.predict import predict
+from origami.cli.train import train
 
 CONTEXT_SETTINGS = dict(max_content_width=120)
 

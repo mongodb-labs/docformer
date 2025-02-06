@@ -66,7 +66,7 @@ class ModelConfig(BaseConfig):
     mask_field_token_losses: bool = False
 
     # whether or not to use guardrails (requires a ObjectVPDA to be passed into model)
-    guardrails: GuardrailsMethod = GuardrailsMethod.STRUCTURE_ONLY
+    guardrails: GuardrailsMethod = GuardrailsMethod.STRUCTURE_AND_VALUES
 
     @staticmethod
     def from_preset(size: str, **kwargs) -> "ModelConfig":
