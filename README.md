@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/mongodb-labs/origami/assets/origami_logo.jpg" style="width: 100%; height: auto;">
+  <img src="assets/origami_logo.jpg" style="width: 100%; height: auto;">
 </p>
 
 # ORiGAMi - Object Representation through Generative Autoregressive Modelling
