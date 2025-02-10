@@ -17,7 +17,6 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="origami-ml",
-    version="0.1.0",
     author="Thomas Rueckstiess",
     author_email="thomas.rueckstiess@mongodb.com",
     description="An ML classifier model to make predictions from semi-structured data.",
@@ -34,7 +33,12 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
+    entry_points={
+        "console_scripts": [
+            "origami = origami.cli:main",
+        ],
+    },
     install_requires=[
         "click>=8.1.7",
         "click-option-group>=0.5.6",
