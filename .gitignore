@@ -7,9 +7,11 @@ checkpoints
 *.hf
 .DS_Store
 .pytest_cache
+.ruff_cache
 dump/
 env/
 .venv/
 .env
 .env.remote
 *.origami
+dist/
