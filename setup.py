@@ -6,11 +6,10 @@ from setuptools import find_packages, setup
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-    # Remove the image section
-    long_description = re.sub(r'<p align="center">\s*<img.*?</p>\s*\n?', "", long_description)
-
-    # Remove the centered arxiv link
-    long_description = re.sub(r'<p align="center">\s*\|.*?\|\s*</p>\s*\n?', "", long_description)
+    # Remove both image and arxiv link sections
+    long_description = re.sub(
+        r'<p align="center">(?:\s*<img[^>]*>|\s*\|[^|]*\|)\s*</p>\s*\n?', "", long_description, flags=re.MULTILINE
+    )
 
     # Remove the Disclaimer section (from ## Disclaimer to the next ##)
     long_description = re.sub(r"## Disclaimer.*?(?=## \w+)", "", long_description, flags=re.DOTALL)
