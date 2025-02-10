@@ -22,10 +22,10 @@ setup(
     description="An ML classifier model to make predictions from semi-structured data.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/origami-ml",
+    url="https://github.com/mongodb-labs/origami",
     packages=find_packages(),
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",

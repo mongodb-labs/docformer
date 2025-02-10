@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/origami_logo.jpg" style="width: 100%; height: auto;">
+  <img src="https://github.com/mongodb-labs/origami/assets/origami_logo.jpg" style="width: 100%; height: auto;">
 </p>
 
 # ORiGAMi - Object Representation through Generative Autoregressive Modelling
@@ -14,13 +14,11 @@ Please note: This tool is not officially supported or endorsed by MongoDB, Inc. 
 
 ## Overview
 
-ORiGAMi is a transformer-based Machine Learning model to directly process semi-structured data such as MongoDB documents or JSON files and make predictions from this data.
+ORiGAMi is a transformer-based Machine Learning model for supervised classification from semi-structured data such as MongoDB documents or JSON files.
 
-Typically, when working with semi-structured data in a Machine Learning context, the data needs to be flattened
-into a tabular form first. This flattening can be lossy, especially in the presence of arrays and nested objects, and often requires domain expertise to extract meaningful higher-order features from the raw data. This feature extraction step is manual, slow and expensive and doesn't scale well.
+Typically, when working with semi-structured data in a Machine Learning context, the data needs to be flattened into a tabular format first. This flattening can be lossy, especially in the presence of arrays and nested objects, and often requires domain expertise to extract meaningful higher-order features from the raw data. This feature extraction step is manual, slow and expensive and doesn't scale well.
 
-ORiGAMi is a transformer model and follows the trend of many other deep learning models by operating directly on the raw data and discovering meaningful features itself. Preprocessing is fully automated (apart from some hyper-parameters that can improve the model performance).
-
+ORiGAMi circumvents this by directly operating on JSON data. Once a model is trained, it can be used to make predictions on any field in the dataset.
 
 ## Installation
 
