@@ -1,6 +1,5 @@
 import click
 
-from origami.cli.generate import generate
 from origami.cli.predict import predict
 from origami.cli.train import train
 
@@ -13,5 +12,4 @@ def main():
 
 
 main.add_command(train)
-main.add_command(generate)
 main.add_command(predict)

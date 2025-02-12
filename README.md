@@ -22,7 +22,7 @@ ORiGAMi circumvents this by directly operating on JSON data. Once a model is tra
 
 ## Installation
 
-ORiGAMi requires Python version 3.10 or higher. We recommend using a virtual environment, such as
+ORiGAMi requires Python version 3.10 or 3.11. We recommend using a virtual environment, such as
 Python's native [`venv`](https://docs.python.org/3/library/venv.html).
 
 To install ORiGAMi with `pip`, use
@@ -48,7 +48,7 @@ ORiGAMi comes with a command line interface (CLI) and a Python SDK.
 
 The CLI allows to train a model and make predictions from a trained model. After installation, run `origami` from your shell to see an overview of available commands.
 
-Help for specific commands is available with `origami <command> --help`, where `<command>` is currently one of `train` or `predict`.
+Help for specific commands is available with `origami <command> --help`, where `<command>` is currently one of `train` or `predict`. Note that the first time you run the `origami` CLI tool can take longer.
 
 Detailed documentation for the CLI and available options can be found in [`CLI.md`](CLI.md).
 
